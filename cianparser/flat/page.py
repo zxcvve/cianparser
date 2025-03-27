@@ -14,7 +14,7 @@ class FlatPageParser:
             time.sleep(10)
         res.raise_for_status()
         self.offer_page_html = res.text
-        self.offer_page_soup = bs4.BeautifulSoup(self.offer_page_html, 'html.parser')
+        self.offer_page_soup = bs4.BeautifulSoup(self.offer_page_html, "html.parser")
 
     def __parse_flat_offer_page_json__(self):
         page_data = {
@@ -28,7 +28,15 @@ class FlatPageParser:
             "floor": -1,
             "floors_count": -1,
             "phone": "",
+            "offer_text": "",
         }
+
+        # Get offer text using specific CSS selector
+        offer_text_span = self.offer_page_soup.select_one(
+            "#description > div > div > div > span"
+        )
+        if offer_text_span:
+            page_data["offer_text"] = " ".join(offer_text_span.text.split())
 
         spans = self.offer_page_soup.select("span")
         for index, span in enumerate(spans):
@@ -57,15 +65,21 @@ class FlatPageParser:
                 page_data["year_of_construction"] = spans[index + 1].text
 
             if "Этаж" == span.text:
-                ints = re.findall(r'\d+', spans[index + 1].text)
+                ints = re.findall(r"\d+", spans[index + 1].text)
                 if len(ints) == 2:
                     page_data["floor"] = int(ints[0])
                     page_data["floors_count"] = int(ints[1])
 
         if "+7" in self.offer_page_html:
-            page_data["phone"] = self.offer_page_html[self.offer_page_html.find("+7"): self.offer_page_html.find("+7") + 16].split('"')[0]. \
-                replace(" ", ""). \
-                replace("-", "")
+            page_data["phone"] = (
+                self.offer_page_html[
+                    self.offer_page_html.find("+7") : self.offer_page_html.find("+7")
+                    + 16
+                ]
+                .split('"')[0]
+                .replace(" ", "")
+                .replace("-", "")
+            )
 
         return page_data
 
